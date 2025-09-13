@@ -93,7 +93,6 @@ const SignupPage = () => {
 
             <FormField
               name="username"
-              type="text"
               control={form.control}
               render={({ field }) => (
                 <FormItem>

@@ -26,8 +26,7 @@ export async function VerificationEmail(username: string, email: string, otp: st
         console.error('Error sending verification email:', error);
         return {
             success: false,
-            message: 'Failed to send verification email',
-            error: error.message,
+            message: `Failed to send verification email: ${error?.message ?? String(error)}`,
         };
     }
 }

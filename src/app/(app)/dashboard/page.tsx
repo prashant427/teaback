@@ -68,7 +68,8 @@ function DashboardPage() {
       setSwitchLoading(false);
       try {
         const response = await axios.get<ApiResponse>("/api/getUseMessage");
-        if (response.data.messages) setMessages(response.data.messages || []);
+        if (response.data.messages)
+          setMessages((response.data.messages as unknown) as MessageModel[] || []);
         if (refresh) {
           toast.success(`Refreshed messages`);
         }
@@ -204,7 +205,7 @@ function DashboardPage() {
         {messages.length > 0 ? (
           messages.map((message) => (
             <MessageCard
-              key={message.length}
+              key={message._id}
               id={message._id}
               content={message.content}
               onDelete={onDelete}
