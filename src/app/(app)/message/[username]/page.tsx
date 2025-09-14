@@ -15,11 +15,14 @@ import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import axios, { AxiosError } from 'axios'
 import { ApiResponse } from '@/types/apiResponce'
+import AiSuggestions from "@/components/AiSuggestion";
+
 
 function Page() {
     const params = useParams<{username: string}>()
     const form = useForm<{ message: string }>()
     const [isLoading, setIsLoading] = useState(false);
+    const [aiQuestions, setAiQuestions] = useState<string[]>([]);
     const onSubmit = async (values: { message: string }) => {
             setIsLoading(true);
             try {
@@ -40,6 +43,17 @@ function Page() {
               setIsLoading(false);
             }
           }
+
+    const fetchAiQuestions = async () => {
+      try {
+        const response = await axios.get(`/api/aiSuggestion`);
+        setAiQuestions(response.data.suggestions);
+      } catch (error) {
+        const axiosError = error as AxiosError<ApiResponse>;
+        toast.error(axiosError.response?.data.message || "An error occurred during fetching ai questions");
+      }
+    }
+    
 
   return (
     <div className='my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-white rounded w-full max-w-6xl'>
@@ -84,6 +98,11 @@ function Page() {
           </div>
         </form>
       </Form>
+
+      <div className="h-full p-4 flex flex-col mt-6 text-2xl">
+        <h1>Click on any message below to select it.</h1>
+        <AiSuggestions ></AiSuggestions>
+      </div>
 
 
 

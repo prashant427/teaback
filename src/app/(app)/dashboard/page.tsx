@@ -13,8 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, RefreshCcw } from "lucide-react";
 import MessageCard from "@/components/messageCard";
-import { Card } from "@/components/ui/card";
-import AiSuggestions from "@/components/AiSuggestion";
+
 
 type MessageModel = {
   _id: string;
@@ -26,7 +25,7 @@ function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [switchLoading, setSwitchLoading] = useState(false);
 
-  const [aiQuestions, setAiQuestions] = useState<string[]>([]);
+  
 
   const onDelete = (id?: string) => {
     setMessages((prev) => prev.filter((msg) => msg._id !== id));
@@ -86,7 +85,7 @@ function DashboardPage() {
     [setLoading, setMessages]
   );
 
-  // const aiSuggestion = useCallback(async () => {
+  
   //   try {
   //     const response = await fetch("/api/aiSuggestion", { method: "POST" });
   //     if (!response.body) {
@@ -215,10 +214,7 @@ function DashboardPage() {
           <p>No messages to display.</p>
         )}
       </div>
-      <div className="h-full p-4 flex flex-col mt-6 text-2xl">
-        <h1>Click on any message below to select it.</h1>
-        <AiSuggestions ></AiSuggestions>
-      </div>
+      
     </div>
   );
 }
