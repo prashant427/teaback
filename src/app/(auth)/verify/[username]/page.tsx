@@ -1,15 +1,17 @@
-'use client'
-import { verifySchema } from '@/Schemas/verifySchema'
-import { ApiResponse } from '@/types/apiResponce'
-import { zodResolver } from '@hookform/resolvers/zod'
-import axios, { AxiosError } from 'axios'
-import { useParams, useRouter } from 'next/navigation'
-import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from "sonner"
-import * as z from 'zod'
+"use client";
 
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
+import * as z from "zod";
+import { Loader2 } from "lucide-react";
+
+import AuthShell from "@/components/AuthShell";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -18,96 +20,140 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@/components/ui/input-otp"
-import { Loader } from 'lucide-react'
+} from "@/components/ui/input-otp";
+import { verifySchema } from "@/Schemas/verifySchema";
+import type { ApiResponse } from "@/types/apiResponce";
 
-const Page = () => {
+export default function VerifyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter()
-  const params = useParams<{username: string}>()
+  const router = useRouter();
+  const params = useParams<{ username: string }>();
 
-    const form = useForm<z.infer<typeof verifySchema>>({
-      resolver: zodResolver(verifySchema),
-      defaultValues: {
-        code: "",
-        
-      },
-      resetOptions: {
-        keepValues: false,
-      },
-    });
+  const form = useForm<z.infer<typeof verifySchema>>({
+    resolver: zodResolver(verifySchema),
+    defaultValues: {
+      code: "",
+    },
+    resetOptions: {
+      keepValues: false,
+    },
+  });
 
-    const onSubmit = async (data : z.infer<typeof verifySchema>) =>{
-      console.log("on submit")
-      setIsSubmitting(true)
-      try {
-        console.log("params",params)
-       const response = await axios.post('/api/verifyUser',{username: params.username, otp:data.code })
-      
-       setIsSubmitting(false)
-       toast.success(response.data.message);
-       router.replace("/login")
+  const onSubmit = async (data: z.infer<typeof verifySchema>) => {
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post<ApiResponse>("/api/verifyUser", {
+        username: params.username,
+        otp: data.code,
+      });
 
-
-      } catch (error) {
-        if (error instanceof Error) {
-          setIsSubmitting(false)
-                const axiosError = error as AxiosError<ApiResponse>;
-                toast.error(axiosError.response?.data.message || "An error occurred during signup");
-      }}
-
+      toast.success(response.data.message);
+      router.replace("/login");
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast.error(
+        axiosError.response?.data.message || "Verification failed. Try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
   return (
-    <div className='flex flex-col items-center justify-center h-screen bg-gradient-to-b from-blue-500 to-purple-500'>
-      <div  className='w-full max-w-md p-8 space-y-3 rounded-xl bg-white/30 backdrop-blur-sm shadow-lg'>
-      <div className='text-center'>
-          <h1 className='text-2xl font-bold'>verify your account {params.username} </h1>
-          <p className='text-sm text-gray-600'>your verification code sent to your provided email.</p>
-        </div>
-        <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-        <FormField
-          control={form.control}
-          name="code"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>One-Time Password</FormLabel>
-              <FormControl>
-                <InputOTP maxLength={6} {...field}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </FormControl>
-              <FormDescription>
-                Please enter the one-time password sent to your phone.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit"  >
-              {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> </> : "Verify"}
-            </Button>
-      </form>
-    </Form>
+    <AuthShell
+      eyebrow="One last step"
+      title={
+        <>
+          Check your
+          <br />
+          <span className="italic">inbox.</span>
+        </>
+      }
+      description={
+        <>
+          We sent a six-digit code to the email linked to{" "}
+          <span className="font-mono text-xs uppercase tracking-[0.12em] text-foreground">
+            @{params?.username}
+          </span>
+          . Enter it below to activate your account.
+        </>
+      }
+      footer={
+        <p>
+          Wrong account?{" "}
+          <Link
+            href="/signup"
+            className="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+          >
+            Start over
+          </Link>
+        </p>
+      }
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>One-time password</FormLabel>
+                <FormControl>
+                  <InputOTP maxLength={6} {...field}>
+                    <InputOTPGroup className="gap-2">
+                      <InputOTPSlot
+                        index={0}
+                        className="size-11 rounded-md border text-base sm:size-12"
+                      />
+                      <InputOTPSlot
+                        index={1}
+                        className="size-11 rounded-md border text-base sm:size-12"
+                      />
+                      <InputOTPSlot
+                        index={2}
+                        className="size-11 rounded-md border text-base sm:size-12"
+                      />
+                      <InputOTPSlot
+                        index={3}
+                        className="size-11 rounded-md border text-base sm:size-12"
+                      />
+                      <InputOTPSlot
+                        index={4}
+                        className="size-11 rounded-md border text-base sm:size-12"
+                      />
+                      <InputOTPSlot
+                        index={5}
+                        className="size-11 rounded-md border text-base sm:size-12"
+                      />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </FormControl>
+                <FormDescription>
+                  The code expires after 15 minutes. Check your spam folder if
+                  it is not there.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-
-
-      </div>
-    </div>
-  )
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              "Verify account"
+            )}
+          </Button>
+        </form>
+      </Form>
+    </AuthShell>
+  );
 }
-
-export default Page

@@ -1,6 +1,6 @@
-# TeaBack
+# Bebaak
 
-TeaBack is a Next.js (App Router) project for anonymous messages and simple user onboarding. Users sign up with an email and username, verify via a one-time code (OTP) sent by email, and can toggle whether they accept incoming messages. Visitors can send messages to verified users.
+Bebaak is a Next.js (App Router) project for anonymous messages and simple user onboarding. Users sign up with an email and username, verify via a one-time code (OTP) sent by email, and can toggle whether they accept incoming messages. Visitors can send messages to verified users.
 
 Key features
 - Email verification flow using Resend to deliver templated verification emails.

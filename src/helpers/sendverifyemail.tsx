@@ -11,9 +11,9 @@ export async function VerificationEmail(username: string, email: string, otp: st
           <VerificationMailTemplate username={username} otp={otp} />
         );
         const verificationEmail = await resend.emails.send({
-            from: "onboarding@resend.dev",
+            from: "Bebaak <onboarding@resend.dev>",
             to: email,
-            subject: 'TeaBack | Verify your email',
+            subject: "Bebaak · Verify your email",
             html
         });
 
@@ -22,11 +22,12 @@ export async function VerificationEmail(username: string, email: string, otp: st
             message: 'Verification email sent successfully',
             data: verificationEmail,
         };
-    } catch (error:any) {
+    } catch (error: unknown) {
         console.error('Error sending verification email:', error);
+        const message = error instanceof Error ? error.message : String(error);
         return {
             success: false,
-            message: `Failed to send verification email: ${error?.message ?? String(error)}`,
+            message: `Failed to send verification email: ${message}`,
         };
     }
 }

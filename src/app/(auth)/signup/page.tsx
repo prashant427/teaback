@@ -1,34 +1,40 @@
-'use client'
-import React, { useEffect, useState } from 'react'
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import Link from 'next/link'
-import { useDebounceCallback } from 'usehooks-ts'
-import { toast } from "sonner"
-import { useRouter } from 'next/navigation'
-import { signupSchema } from '@/Schemas/signupSchema'
-import axios, { AxiosError } from 'axios'
-import { ApiResponse } from '@/types/apiResponce'
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Loader } from 'lucide-react';
+"use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useDebounceCallback } from "usehooks-ts";
+import * as z from "zod";
+import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
+import AuthShell from "@/components/AuthShell";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { signupSchema } from "@/Schemas/signupSchema";
+import type { ApiResponse } from "@/types/apiResponce";
 
-const SignupPage = () => {
+export default function SignupPage() {
   const [username, setUsername] = useState("");
-  const [usermessage, setUserMessage] = useState("");
+  const [userMessage, setUserMessage] = useState("");
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const debounced = useDebounceCallback(setUsername, 300);
-
-
   const router = useRouter();
 
-  //schema validation zod
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -42,27 +48,30 @@ const SignupPage = () => {
     },
   });
 
-  //check user Unique debounce
   useEffect(() => {
-    const CheckingUsername = async () => {
-      if (username) {
-        setIsCheckingUsername(true);
-        setUserMessage("");
-        try {
-          const response = await axios.get(`/api/check-username-uniqe?username=${encodeURIComponent(username)}`);
-          setUserMessage(response.data.message);
-        } catch (error) {
-          if (error instanceof Error) {
-            const axiosError = error as AxiosError<ApiResponse>;
-            setUserMessage(axiosError.response?.data.message || "An error occurred on username uniqueness check");
-          }
-        } finally {
-          setIsCheckingUsername(false);
-        }
+    const checkUsername = async () => {
+      if (!username) return;
+
+      setIsCheckingUsername(true);
+      setUserMessage("");
+      try {
+        const response = await axios.get(
+          `/api/check-username-uniqe?username=${encodeURIComponent(username)}`
+        );
+        setUserMessage(response.data.message);
+      } catch (error) {
+        const axiosError = error as AxiosError<ApiResponse>;
+        setUserMessage(
+          axiosError.response?.data.message ||
+            "Could not check that username right now."
+        );
+      } finally {
+        setIsCheckingUsername(false);
       }
     };
-    CheckingUsername();
-  }, [username])
+
+    checkUsername();
+  }, [username]);
 
   const onSubmit = async (data: z.infer<typeof signupSchema>) => {
     setIsSubmitting(true);
@@ -71,122 +80,167 @@ const SignupPage = () => {
       toast.success(response.data.message);
       router.replace(`/verify/${username}`);
     } catch (error) {
-      if (error instanceof Error) {
-        const axiosError = error as AxiosError<ApiResponse>;
-        toast.error(axiosError.response?.data.message || "An error occurred during signup");
-      }
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast.error(
+        axiosError.response?.data.message || "An error occurred during signup"
+      );
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
+
+  const usernameAvailable = userMessage === "Username is available";
 
   return (
-    <div className='flex justify-center items-center h-screen bg-gradient-to-r from-blue-500 to-purple-500'>
-      <div className='w-full max-w-md p-8 space-y-3 rounded-xl bg-white/30 backdrop-blur-sm shadow-lg'>
-        <div className='text-center'>
-          <h1 className='text-2xl font-bold'>Join teaback</h1>
-          <p className='text-sm text-gray-600'>Please fill in the details below to create an account.</p>
-        </div>
+    <AuthShell
+      eyebrow="Create an account"
+      title={
+        <>
+          Claim your
+          <br />
+          <span className="italic">Bebaak link.</span>
+        </>
+      }
+      description="One handle, one link, and a private inbox for whatever people are too shy to say out loud."
+      footer={
+        <p>
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+          >
+            Log in
+          </Link>
+        </p>
+      }
+    >
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-5"
+          noValidate
+        >
+          <FormField
+            name="username"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Username</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="yourhandle"
+                    autoComplete="username"
+                    {...field}
+                    onChange={(event) => {
+                      field.onChange(event);
+                      debounced(event.target.value);
+                    }}
+                  />
+                </FormControl>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
+                {isCheckingUsername ? (
+                  <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                    <Loader2 className="size-3 animate-spin" />
+                    Checking availability
+                  </p>
+                ) : userMessage ? (
+                  <p
+                    className={`flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] ${
+                      usernameAvailable
+                        ? "text-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {usernameAvailable ? (
+                      <CheckCircle2 className="size-3" />
+                    ) : (
+                      <XCircle className="size-3" />
+                    )}
+                    {userMessage}
+                  </p>
+                ) : null}
 
-            <FormField
-              name="username"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="username"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        debounced(e.target.value);
-                      }}
-                    />
-                  </FormControl>
-                  {isCheckingUsername && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-                  <p className={`text-sm ${usermessage === "Username is available" ? "text-green-500" : "text-red-500"}`}> {usermessage} </p>
-                  <FormDescription>
-                    This is your public display name.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormDescription>
+                  This becomes your public link. Choose wisely.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              name="email"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="email"
-                      type="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            name="email"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="you@example.com"
+                    type="email"
+                    autoComplete="email"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              name="password"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="password"
-                      type="password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            name="password"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Create a password"
+                    type="password"
+                    autoComplete="new-password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              name="confirmPassword"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="confirm password"
-                      type="password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <FormField
+            name="confirmPassword"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm password</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Repeat your password"
+                    type="password"
+                    autoComplete="new-password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <Button type="submit"  disabled={isSubmitting}>
-              {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> </> : "Create Account"}
-            </Button>
-          </form>
-
-        </Form>
-        <div className='text-center mt-4'>
-          <p>
-            Already have an account? <Link href="/login">Log in</Link>
-          </p>
-        </div>
-
-
-      </div>
-    </div>
-  )
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting || isCheckingUsername}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create account"
+            )}
+          </Button>
+        </form>
+      </Form>
+    </AuthShell>
+  );
 }
-
-export default  SignupPage 

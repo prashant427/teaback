@@ -1,34 +1,65 @@
-"use client"
-import { useSession,signOut } from 'next-auth/react'
-import Link from 'next/link'
-import React from 'react'
-import {User}   from 'next-auth'
-import { Button } from '@/components/ui/button'
+"use client";
 
-const page = () => {
-    const {data:session} = useSession();
-    const user:User = session?.user as User;
-    
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import type { User } from "next-auth";
+import { LayoutDashboard, LogOut } from "lucide-react";
+
+import Brand from "@/components/Brand";
+import { Button } from "@/components/ui/button";
+
+export default function Navbar() {
+  const { data: session, status } = useSession();
+  const user = session?.user as User | undefined;
 
   return (
-    <nav>
-        <div className='container mx-auto flex justify-between items-center py-4'>
-            <a className='text-2xl font-bold capitalize' href="#">teaback</a>
-            {
-                session ? (
-                    <>
-                    <span>Welcome,{user.username || 'Guest'} </span>
-                    <Button onClick={() => signOut()}>log Out</Button>
-                    </>
-                ) : (
-                    <Link href="/login">
-                        <Button>Sign In</Button>
-                    </Link>
-                )
-            }
-        </div>
-    </nav>
-  )
-}
+    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5 md:px-8">
+        <Brand href="/" />
 
-export default page
+        <nav className="flex items-center gap-1.5 sm:gap-2">
+          {status === "loading" ? (
+            <div
+              className="h-8 w-28 animate-pulse rounded-md bg-muted"
+              aria-hidden
+            />
+          ) : session ? (
+            <>
+              <span className="mr-1 hidden items-center gap-2 rounded-full border border-border px-3 py-1.5 sm:inline-flex">
+                <span className="size-1.5 rounded-full bg-foreground" />
+                <span className="max-w-32 truncate font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                  @{user?.username || "guest"}
+                </span>
+              </span>
+
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/dashboard">
+                  <LayoutDashboard />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </Link>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                <LogOut />
+                <span className="hidden sm:inline">Sign out</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/login">Log in</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/signup">Get started</Link>
+              </Button>
+            </>
+          )}
+        </nav>
+      </div>
+    </header>
+  );
+}

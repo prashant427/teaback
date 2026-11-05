@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth";
+import { NextAuthOptions, type User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { UserModel } from "@/models/user";
 import bcrypt from "bcryptjs";
@@ -14,7 +14,7 @@ export const authOptions: NextAuthOptions = {
                 email: { label: "Email", type: "text", placeholder: "Enter your email" },
                 password: { label: "Password", type: "password", placeholder: "Enter your password" }
             },
-            async authorize(credentials): Promise<any> {
+            async authorize(credentials): Promise<User | null> {
                 await dbConnect();
 
                 try {
@@ -41,7 +41,7 @@ export const authOptions: NextAuthOptions = {
                         throw new Error("Invalid password");
                     }
     
-                    return user;
+                    return user as unknown as User;
                 } catch (error) {
                     console.error("Error authorizing user:", error);
                     throw new Error("Failed to authorize user: " + error);

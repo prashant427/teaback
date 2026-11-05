@@ -1,5 +1,14 @@
-'use client'
-import React, { useState } from 'react'
+"use client";
+
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
+import { Loader2, Lock, Send } from "lucide-react";
+
+import AiSuggestions from "@/components/AiSuggestion";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -8,108 +17,119 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { useForm } from 'react-hook-form'
-import { Loader } from 'lucide-react'
-import { useParams } from 'next/navigation'
-import { toast } from 'sonner'
-import axios, { AxiosError } from 'axios'
-import { ApiResponse } from '@/types/apiResponce'
-import AiSuggestions from "@/components/AiSuggestion";
+} from "@/components/ui/form";
+import type { ApiResponse } from "@/types/apiResponce";
 
+export default function PublicMessagePage() {
+  const params = useParams<{ username: string }>();
+  const form = useForm<{ message: string }>();
+  const [isLoading, setIsLoading] = useState(false);
 
-function Page() {
-    const params = useParams<{username: string}>()
-    const form = useForm<{ message: string }>()
-    const [isLoading, setIsLoading] = useState(false);
-    const [aiQuestions, setAiQuestions] = useState<string[]>([]);
-    const onSubmit = async (values: { message: string }) => {
-            setIsLoading(true);
-            try {
-              console.log("params",params)
-              const response = await axios.post('/api/send-message',{username: params.username, content: values.message});
-              console.log("response",response)
-              setIsLoading(false);
-              if (response.data.success) {
-                toast.success('Message sent successfully');
-              }
+  const onSubmit = async (values: { message: string }) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post("/api/send-message", {
+        username: params.username,
+        content: values.message,
+      });
 
-              form.reset();
-            } catch (error) {
-              const axiosError = error as AxiosError<ApiResponse>;
-              toast.error(axiosError.response?.data.message || "An error occurred during signup");
-                    
-            } finally {
-              setIsLoading(false);
-            }
-          }
-
-    const fetchAiQuestions = async () => {
-      try {
-        const response = await axios.get(`/api/aiSuggestion`);
-        setAiQuestions(response.data.suggestions);
-      } catch (error) {
-        const axiosError = error as AxiosError<ApiResponse>;
-        toast.error(axiosError.response?.data.message || "An error occurred during fetching ai questions");
+      if (response.data.success) {
+        toast.success("Message sent. They will never know it was you.");
+        form.reset();
       }
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast.error(
+        axiosError.response?.data.message || "Could not send that message"
+      );
+    } finally {
+      setIsLoading(false);
     }
-    
+  };
 
   return (
-    <div className='my-8 mx-4 md:mx-8 lg:mx-auto p-6 bg-white rounded w-full max-w-6xl'>
-      <h1 className="text-4xl font-bold mb-4 text-center">Public Profile Link</h1>
-
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6"
-        >
-          <p className="text-sm text-muted-foreground">Sending message to <span className="font-medium">@{params?.username}</span></p>
-
-          <FormField
-            control={form.control}
-            name="message"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Message</FormLabel>
-                <FormDescription>Write a public message that will appear on your profile.</FormDescription>
-                <FormControl>
-                  <textarea
-                    {...field}
-                    rows={6}
-                    placeholder="Write your message..."
-                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-            >
-              {isLoading ? <Loader className="h-4 w-4 animate-spin" /> : null}
-              Send
-            </button>
-          </div>
-        </form>
-      </Form>
-
-      <div className="h-full p-4 flex flex-col mt-6 text-2xl">
-        <h1>Click on any message below to select it.</h1>
-        <AiSuggestions ></AiSuggestions>
+    <main className="mx-auto w-full max-w-6xl px-5 py-12 md:px-8 md:py-16">
+      <div className="max-w-2xl">
+        <p className="eyebrow flex items-center gap-2">
+          <span className="inline-block size-1.5 rounded-full bg-foreground" />
+          Public message
+        </p>
+        <h1 className="display-tight mt-4 text-5xl md:text-6xl">
+          Write to{" "}
+          <span className="italic">@{params?.username}</span>
+        </h1>
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Say the thing. Ask the question. Bebaak delivers it without your name,
+          your email, or anything that points back to you.
+        </p>
       </div>
 
+      <div className="mt-10 grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="rounded-lg border border-border bg-card p-6 md:p-8">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="eyebrow">Compose</p>
+              <h2 className="mt-2 text-lg font-semibold tracking-tight">
+                Your anonymous message
+              </h2>
+            </div>
+            <span className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              <Lock className="size-3" />
+              Anonymous
+            </span>
+          </div>
 
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="mt-6 space-y-5"
+            >
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Message</FormLabel>
+                    <FormControl>
+                      <textarea
+                        {...field}
+                        rows={8}
+                        placeholder="Type what you have been holding back..."
+                        className="w-full resize-y rounded-md border border-input bg-background px-4 py-3 text-sm leading-relaxed shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Be honest, be kind, be bebaak. Your identity stays hidden.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
+              <div className="flex flex-col-reverse items-stretch justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  Sent without a name
+                </p>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      Send message
+                      <Send />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </section>
 
-    </div>
-  )
+        <AiSuggestions />
+      </div>
+    </main>
+  );
 }
-
-export default Page
- 
