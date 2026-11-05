@@ -128,7 +128,7 @@ export default function PublicMessagePage() {
           </Form>
         </section>
 
-        <AiSuggestions />
+        <AiSuggestions onSelect={(text) => form.setValue("message", text)} />
       </div>
     </main>
   );

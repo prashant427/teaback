@@ -4,35 +4,38 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 
+type AiSuggestionsProps = {
+  onSelect?: (text: string) => void;
+};
+
 const FALLBACK_SUGGESTIONS = [
   "What would you do if nobody could judge you?",
   "What advice do you give others but never follow yourself?",
   "What is something you have wanted to say out loud but never have?",
 ];
 
-export default function AiSuggestions() {
+export default function AiSuggestions({ onSelect }: AiSuggestionsProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const generate = async () => {
     setLoading(true);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 25000);
-
     try {
-      const response = await fetch("/api/aiSugg", {
+      const response = await fetch("/api/aiSuggestion", {
         method: "POST",
-        signal: controller.signal,
       });
       const data = await response.json();
-      console.log("AI response:", data);
       setSuggestions(data.suggestions ?? FALLBACK_SUGGESTIONS);
     } catch {
       setSuggestions(FALLBACK_SUGGESTIONS);
     } finally {
-      clearTimeout(timer);
       setLoading(false);
     }
+  };
+
+  const handleSelect = (text: string) => {
+    setSuggestions([]);
+    onSelect?.(text);
   };
 
   return (
@@ -78,15 +81,16 @@ export default function AiSuggestions() {
         <div className="mt-6 space-y-2.5">
           {suggestions.length > 0 ? (
             suggestions.map((suggestion, index) => (
-              <div
+              <button
                 key={`${index}-${suggestion}`}
-                className="flex gap-3 rounded-md border border-background/10 bg-background p-4 text-foreground"
+                onClick={() => handleSelect(suggestion)}
+                className="w-full flex gap-3 items-start rounded-md border border-background/10 bg-background p-4 text-foreground text-left transition-colors hover:bg-background/50 focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground shrink-0">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <p className="text-sm leading-relaxed">{suggestion}</p>
-              </div>
+              </button>
             ))
           ) : (
             <div className="rounded-md border border-dashed border-background/25 px-4 py-8 text-center">
